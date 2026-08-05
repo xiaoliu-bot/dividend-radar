@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高股息雷达 · 技术面择时看板</title>
+<meta name="description" content="基于分红持续性与技术面共振的 A 股高股息标的筛选看板">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>高股息雷达</h1>
+        <p class="brand-sub">分红持续性 × 技术面择时</p>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span id="tradeDate" class="meta-chip">—</span>
+      <span id="updatedAt" class="meta-muted">数据加载中…</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="stats" id="stats">
+    <div class="stat-card"><span class="stat-label">入选标的</span><strong class="stat-value" id="sOutput">—</strong><span class="stat-hint" id="sUniverse">—</span></div>
+    <div class="stat-card"><span class="stat-label">买入信号</span><strong class="stat-value up" id="sBuy">—</strong><span class="stat-hint">技术面转强</span></div>
+    <div class="stat-card"><span class="stat-label">卖出信号</span><strong class="stat-value down" id="sSell">—</strong><span class="stat-hint">建议规避</span></div>
+    <div class="stat-card"><span class="stat-label">平均股息率</span><strong class="stat-value" id="sYield">—</strong><span class="stat-hint">近 12 个月</span></div>
+  </section>
+
+  <section class="toolbar">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="search" id="search" placeholder="搜索代码或名称">
+    </div>
+    <div class="filters">
+      <select id="fSignal">
+        <option value="all">全部信号</option>
+        <option value="buy">仅看买入</option>
+        <option value="sell">仅看卖出</option>
+        <option value="hold">仅看持有</option>
+      </select>
+      <select id="fIndustry"><option value="all">全部行业</option></select>
+      <select id="fSort">
+        <option value="score">按综合评分</option>
+        <option value="dividend_yield">按股息率</option>
+        <option value="tech">按技术面评分</option>
+        <option value="fund">按基本面评分</option>
+        <option value="roe">按 ROE</option>
+        <option value="dividend_years">按分红年数</option>
+      </select>
+    </div>
+  </section>
+
+  <p class="result-line"><span id="resultCount">—</span> · 点击任意一行查看 K 线与信号明细</p>
+
+  <section class="table-head">
+    <span>标的</span><span>现价</span><span>股息率</span><span>连续分红</span><span>ROE</span><span>基本面</span><span>技术面</span><span>综合</span><span>操作建议</span>
+  </section>
+
+  <section id="list" class="list">
+    <div class="loading">正在加载数据…</div>
+  </section>
+
+  <footer class="footer">
+    <p class="disclaimer"><strong>风险提示：</strong>本页面所有内容由程序基于公开数据自动生成，仅用于研究与学习，不构成任何投资建议或买卖推荐。技术指标信号存在滞后性与失效可能，历史表现不代表未来收益。股市有风险，决策请独立判断。</p>
+    <p class="footer-meta">数据来源：akshare（东方财富公开数据） · 每交易日收盘后更新</p>
+  </footer>
+
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <button class="modal-close" data-close aria-label="关闭">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
