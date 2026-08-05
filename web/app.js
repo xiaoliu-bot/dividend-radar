@@ -8,7 +8,7 @@ const S = {
 
 const $ = (s) => document.querySelector(s);
 const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? '—' : Number(v).toFixed(d));
-const dark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const dark = () => false;
 
 const GRADE_CLASS = { 'A+': 'g-Aplus', 'A': 'g-A', 'B+': 'g-Bplus', 'B': 'g-B', 'C+': 'g-Cplus', 'C': 'g-C' };
 
@@ -296,12 +296,12 @@ function drawChart(s) {
   const ohlc = s.kline.map((r) => [r[1], r[2], r[3], r[4]]);  // open, close, low, high
   const vols = s.kline.map((r, i) => ({
     value: r[5],
-    itemStyle: { color: r[2] >= r[1] ? 'rgba(217,69,59,.55)' : 'rgba(22,164,92,.55)' },
+    itemStyle: { color: r[2] >= r[1] ? 'rgba(224,49,49,.55)' : 'rgba(47,158,68,.55)' },
   }));
 
   const isDark = dark();
-  const axisColor = isDark ? '#3a424d' : '#e6e9ed';
-  const textColor = isDark ? '#98a1ad' : '#6a7280';
+  const axisColor = isDark ? '#3a424d' : '#e5e7eb';
+  const textColor = isDark ? '#98a1ad' : '#6b7280';
 
   S.chart = echarts.init(el, null, { renderer: 'canvas' });
 
@@ -312,7 +312,7 @@ function drawChart(s) {
     smooth: true,
     symbol: 'none',
     lineWidth: 1,
-    lineStyle: { width: 1.2, color: ['#e8a33d', '#2563eb', '#8b5cf6'][i] },
+    lineStyle: { width: 1.2, color: ['#e8a33d', '#1971c2', '#8b5cf6'][i] },
   }));
 
   S.chart.setOption({
@@ -326,7 +326,7 @@ function drawChart(s) {
       axisPointer: { type: 'cross' },
       backgroundColor: isDark ? '#1c2128' : '#fff',
       borderColor: axisColor,
-      textStyle: { color: isDark ? '#e8eaed' : '#171a1f', fontSize: 12 },
+      textStyle: { color: isDark ? '#e8eaed' : '#1f2937', fontSize: 12 },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
     grid: [
@@ -350,16 +350,16 @@ function drawChart(s) {
     series: [
       {
         name: 'K线', type: 'candlestick', data: ohlc, xAxisIndex: 0, yAxisIndex: 0,
-        itemStyle: { color: '#d9453b', color0: '#16a45c', borderColor: '#d9453b', borderColor0: '#16a45c' },
+        itemStyle: { color: '#e03131', color0: '#2f9e44', borderColor: '#e03131', borderColor0: '#2f9e44' },
       },
       ...maSeries.map((m) => ({ ...m, xAxisIndex: 0, yAxisIndex: 0 })),
       { name: '成交量', type: 'bar', data: vols, xAxisIndex: 1, yAxisIndex: 1 },
       {
         name: 'MACD', type: 'bar', xAxisIndex: 2, yAxisIndex: 2,
-        data: buildMacd(s).hist.map((v) => ({ value: v, itemStyle: { color: v >= 0 ? '#d9453b' : '#16a45c' } })),
+        data: buildMacd(s).hist.map((v) => ({ value: v, itemStyle: { color: v >= 0 ? '#e03131' : '#2f9e44' } })),
       },
       { name: 'DIF', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: buildMacd(s).dif, symbol: 'none', lineStyle: { width: 1, color: '#e8a33d' } },
-      { name: 'DEA', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: buildMacd(s).dea, symbol: 'none', lineStyle: { width: 1, color: '#2563eb' } },
+      { name: 'DEA', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: buildMacd(s).dea, symbol: 'none', lineStyle: { width: 1, color: '#1971c2' } },
     ],
   });
 }

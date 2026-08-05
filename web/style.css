@@ -1,40 +1,28 @@
 :root {
-  --bg: #f6f7f9;
+  --bg: #f5f6fa;
   --card: #ffffff;
-  --card-alt: #fafbfc;
-  --border: #e6e9ed;
-  --border-strong: #d4d9df;
-  --text: #171a1f;
-  --text-sec: #6a7280;
-  --text-dim: #9aa1ab;
-  --up: #d9453b;
-  --down: #16a45c;
-  --accent: #2563eb;
-  --accent-soft: #eef4ff;
-  --warn: #b8760b;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --card-alt: #f8f9fb;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text: #1f2937;
+  --text-sec: #6b7280;
+  --text-dim: #9ca3af;
+  --up: #e03131;
+  --down: #2f9e44;
+  --accent: #1971c2;
+  --accent-soft: #e7f0fd;
+  --warn: #e8590c;
+  --gray: #868e96;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1216;
-    --card: #171b21;
-    --card-alt: #1c2128;
-    --border: #262c34;
-    --border-strong: #333b45;
-    --text: #e8eaed;
-    --text-sec: #98a1ad;
-    --text-dim: #6b7480;
-    --accent-soft: #17233d;
-  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
@@ -42,7 +30,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.wrap { max-width: 1220px; margin: 0 auto; padding: 0 20px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
 
 /* ---------------------------------------------------------- 顶栏 */
 .topbar {
@@ -68,7 +56,7 @@ body {
 .topbar-meta { display: flex; align-items: center; gap: 10px; }
 .meta-chip {
   background: var(--accent-soft); color: var(--accent);
-  padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .meta-muted { font-size: 12px; color: var(--text-dim); }
@@ -170,12 +158,12 @@ select:hover { border-color: var(--border-strong); }
   min-width: 34px; height: 24px; padding: 0 7px; border-radius: 6px;
   font-size: 12.5px; font-weight: 700; letter-spacing: -.2px;
 }
-.g-Aplus { background: #0f7a48; color: #fff; }
-.g-A { background: #16a45c; color: #fff; }
-.g-Bplus { background: #2563eb; color: #fff; }
-.g-B { background: #6b8ab8; color: #fff; }
-.g-Cplus { background: #94a3b8; color: #fff; }
-.g-C { background: #b9c0c9; color: #fff; }
+.g-Aplus { background: #2f9e44; color: #fff; }
+.g-A { background: #37b24d; color: #fff; }
+.g-Bplus { background: #1971c2; color: #fff; }
+.g-B { background: #4dabf7; color: #fff; }
+.g-Cplus { background: #868e96; color: #fff; }
+.g-C { background: #adb5bd; color: #fff; }
 
 .cell-action { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tag {
@@ -185,10 +173,6 @@ select:hover { border-color: var(--border-strong); }
 .tag-buy { background: #fdeceb; color: var(--up); }
 .tag-sell { background: #e7f6ee; color: var(--down); }
 .tag-hold { background: var(--card-alt); color: var(--text-sec); border: 1px solid var(--border); }
-@media (prefers-color-scheme: dark) {
-  .tag-buy { background: #3a1c1a; }
-  .tag-sell { background: #14301f; }
-}
 .sig-count { font-size: 11px; color: var(--text-dim); }
 
 .loading, .empty {
@@ -200,7 +184,7 @@ select:hover { border-color: var(--border-strong); }
 .modal[hidden] { display: none; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(15,20,28,.45); backdrop-filter: blur(2px); }
 .modal-panel {
-  position: relative; background: var(--card); border-radius: 16px;
+  position: relative; background: var(--card); border-radius: var(--radius-xl);
   width: min(940px, 100%); max-height: 90vh; overflow-y: auto;
   border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(16,24,40,.18);
 }
