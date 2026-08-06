@@ -3,13 +3,13 @@
 
 三个数据源各司其职，都是公开免费接口：
 
-  行情报价  腾讯行情 qt.gtimg.cn        —— 支持批量，一次几百只，拿现价 / PE / PB / 市值
-  日 K 线   东财 push2his.eastmoney.com —— 前复权日线
-  财报分红  akshare（东财财报接口）      —— 分红送配、业绩报表、资产负债表
+  行情报价  akshare 全市场快照（东财 push2） —— 一次拿全部 A 股现价 / PE / PB / 市值 / 换手
+  日 K 线   akshare stock_zh_a_hist（东财）  —— 前复权日线
+  财报分红  akshare（东财财报接口）           —— 分红送配、业绩报表、资产负债表
 
-之所以不用 akshare 的 stock_zh_a_spot_em 和 stock_zh_a_hist：这两个接口打的是
-push2.eastmoney.com，实测容易触发限流后直接断连（RemoteDisconnected）。
-财报类接口走的是另一套域名，稳定得多，所以保留。
+多源自动降级：腾讯行情 qt.gtimg.cn 作为报价 / K 线兜底。
+原因：GitHub Actions 的境外 runner 连不上腾讯行情，但东财接口可达；
+本地本机两套都通。所以东财为主、腾讯兜底，哪个环境都能跑。
 """
 
 import os
@@ -123,7 +123,7 @@ def secid(code: str) -> str:
 # ---------------------------------------------------------------- 批量行情
 
 
-# 腾讯行情返回的 88 段字段中我们关心的位置
+# 腾讯行情返回的 88 段字段中我们关心的位置（兜底源用）
 TENCENT_FIELDS = {
     "name": 1, "code": 2, "price": 3, "prev_close": 4,
     "change_pct": 32, "high": 33, "low": 34,
@@ -131,9 +131,35 @@ TENCENT_FIELDS = {
 }
 
 
+@retry(times=2, delay=3.0)
+def _fetch_spot_akshare() -> pd.DataFrame:
+    """
+    主源：akshare 全市场快照（东财 push2 接口），一次调用拿全部 A 股报价。
+
+    GitHub Actions 的境外 runner 连不上腾讯行情，但东财接口可达；
+    本地本机两条都通。所以报价以 akshare 为主，腾讯批量作为兜底。
+    """
+    df = ak.stock_zh_a_spot_em()
+    if df is None or not len(df):
+        return None
+    out = pd.DataFrame()
+    out["code"] = df[pick_col(df, "代码")].astype(str).str.zfill(6)
+    name_col = pick_col(df, "名称") or pick_col(df, "简称")
+    if name_col is not None:
+        out["name"] = df[name_col].astype(str)
+    out["price"] = to_num(df[pick_col(df, "最新价")])
+    out["change_pct"] = to_num(df[pick_col(df, "涨跌幅")])
+    out["pe"] = to_num(df[pick_col(df, "市盈率", "动态")])
+    out["pb"] = to_num(df[pick_col(df, "市净率")])
+    out["turnover"] = to_num(df[pick_col(df, "换手率")])
+    mc = to_num(df[pick_col(df, "总市值")])
+    out["mktcap"] = mc / 1e8 if mc is not None else None   # 元 → 亿元
+    return out.dropna(subset=["code"]).reset_index(drop=True)
+
+
 @retry(times=3, delay=2.0)
 def _fetch_quote_batch(codes: list) -> list:
-    """一次拉一批报价。腾讯这个接口单次 200 只左右很稳"""
+    """兜底源：腾讯行情批量，一次几百只。本地网络下很稳。"""
     query = ",".join(market_prefix(c) + c for c in codes)
     r = requests.get(f"https://qt.gtimg.cn/q={query}", headers=HEADERS, timeout=25)
     r.encoding = "gbk"
@@ -161,14 +187,24 @@ def _fetch_quote_batch(codes: list) -> list:
 
 def get_quotes(codes: list, batch_size: int = 150, verbose: bool = True) -> pd.DataFrame:
     """
-    批量获取报价。返回 code / name / price / change_pct / pe / pb / mktcap（亿元）/ turnover
+    批量获取报价。返回 code / name / price / change_pct / pe / pb / mktcap(亿元) / turnover
 
-    市值单位是亿元，这是腾讯接口的原生单位，不做换算免得来回出错。
+    优先 akshare 全市场快照（一次调用，runner 上可达）；失败时回退腾讯批量。
     """
     codes = list(dict.fromkeys(codes))
+
+    spot = _fetch_spot_akshare()
+    if spot is not None and len(spot):
+        df = spot[spot["code"].isin(set(codes))].copy()
+        if len(df):
+            df = df.drop_duplicates("code").reset_index(drop=True)
+            if verbose:
+                print(f"    报价获取 {len(df)}/{len(codes)} 只（akshare 快照）", flush=True)
+            return df
+
+    print("    [warn] akshare 快照不可用，回退腾讯批量行情", flush=True)
     out = []
     total_batches = (len(codes) + batch_size - 1) // batch_size
-
     for i in range(0, len(codes), batch_size):
         batch = codes[i:i + batch_size]
         rows = _fetch_quote_batch(batch)
@@ -245,14 +281,33 @@ def _kline_eastmoney(code: str, bars: int) -> pd.DataFrame:
     return pd.DataFrame(rows) if rows else None
 
 
+@retry(times=2, delay=2.0)
+def _kline_akshare(code: str, bars: int) -> pd.DataFrame:
+    """主源：akshare 前复权日线（东财），GitHub runner 上可达。"""
+    df = ak.stock_zh_a_hist(
+        symbol=code, period="daily", adjust="qfq",
+        end_date=datetime.now().strftime("%Y%m%d"),
+    )
+    if df is None or not len(df):
+        return None
+    df = df.rename(columns={
+        "日期": "date", "开盘": "open", "收盘": "close",
+        "最高": "high", "最低": "low", "成交量": "volume",
+    })
+    df["date"] = df["date"].astype(str)
+    for c in ("open", "close", "high", "low", "volume"):
+        df[c] = to_num(df[c])
+    df = df.dropna(subset=["close"])
+    return df.tail(bars).reset_index(drop=True)
+
+
 def get_kline(code: str, bars: int = 400) -> pd.DataFrame:
     """
-    获取前复权日线，腾讯优先、东财兜底。
+    获取前复权日线：akshare（东财）优先，腾讯、东财 requests 兜底。
 
-    两个源都用独立的 requests.get 而非共享 Session——实测共享 Session 在多线程下
-    容易被服务端判定为异常连接直接断开。
+    各源独立 requests.get，避免共享 Session 在并发下被打断。
     """
-    for fetcher in (_kline_tencent, _kline_eastmoney):
+    for fetcher in (_kline_akshare, _kline_tencent, _kline_eastmoney):
         for attempt in range(2):
             try:
                 df = fetcher(code, bars)
